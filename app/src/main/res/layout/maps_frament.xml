@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.keeptoo.toajam.geoupdates.activities.MapActivity">
+
+
+    <include layout="@layout/ly_map" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_gravity="bottom"
+        android:background="@color/colorPrimary"
+        android:orientation="vertical"
+        android:theme="@style/AppTheme.Custom">
+
+        <android.support.design.widget.TabLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/tab_items"
+            android:layout_gravity="center_horizontal">
+
+            <android.support.design.widget.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tab_0"
+                android:text="Notes" />
+
+            <android.support.design.widget.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tab_1"
+                android:text="Tows" />
+
+        </android.support.design.widget.TabLayout>
+
+    </LinearLayout>
+
+</android.support.design.widget.CoordinatorLayout>

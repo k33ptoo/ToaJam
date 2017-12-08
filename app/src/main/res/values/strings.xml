@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">ToaJam</string>
+    <string name="api_key">AIzaSyBWI9l8q3mWqegBUR6n-oBlFNUVcnOUrso</string>
+    <string name="title_activity_home">HomeActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_comments"></string>
+    <string name="banner_ad_unit_id_test">ca-app-pub-3940256099942544/5224354917</string>
+    <string name="banner_ad_unit_id_deploy">ca-app-pub-4373159855370985/9658862868</string>
+</resources>

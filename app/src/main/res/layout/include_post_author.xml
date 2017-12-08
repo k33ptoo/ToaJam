@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorPrimary"
+    android:gravity="center_vertical"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:padding="10dp"
+        android:layout_height="wrap_content">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/post_author_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/ic_action_icon_placeholder"
+            app:civ_border_color="#fff"
+            app:civ_border_width="2dp" />
+
+        <TextView
+            android:id="@+id/post_author"
+            style="@style/Base.TextAppearance.AppCompat.Small"
+            android:layout_width="300dp"
+            android:ellipsize="end"
+            android:layout_height="wrap_content"
+            android:paddingTop="7dp"
+            android:textAlignment="center"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/post_author_photo"
+            android:textColor="#fff"
+            android:layout_gravity="center"
+            android:textSize="14sp"
+            android:gravity="center_vertical"
+            tools:text="someauthor@email.com" />
+
+    </RelativeLayout>
+
+</android.support.constraint.ConstraintLayout>

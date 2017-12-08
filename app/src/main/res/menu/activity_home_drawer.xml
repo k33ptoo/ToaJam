@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_updates"
+            android:icon="@drawable/ic_action_updates"
+            android:title="Updates" />
+        <!--<item
+            android:id="@+id/nav_chat"
+            android:icon="@drawable/ic_action_chat"
+            android:title="Chat" />-->
+        <item
+            android:id="@+id/nav_mylocation"
+            android:icon="@drawable/ic_action_mylocation"
+            android:title="Your Zone" />
+<!--
+          <item
+              android:id="@+id/nav_tow"
+              android:icon="@drawable/ic_tow_truck"
+              android:title="Tow Services" />-->
+    </group>
+
+    <item android:title="Tell a friend">
+        <menu>
+            <item
+                android:id="@+id/nav_share"
+                android:icon="@drawable/ic_action_share"
+                android:title="Share" />
+                <item
+                    android:id="@+id/nav_signout"
+                    android:icon="@drawable/ic_action_signout"
+                    android:title="Sign Out" />
+        </menu>
+    </item>
+
+</menu>
