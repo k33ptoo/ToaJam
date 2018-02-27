@@ -22,6 +22,18 @@ traffic problems in Africa and beyond.
 
 * You may contribute to this project at any time
 
+
+### Screenshots ###
+
+![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/1.png)
+
+![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/2.png)
+
+![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/3.png)
+
+![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/4.png)
+
+
 ### Who do I talk to? ###
 
 * Amos Chepchieng [KeepToo]
