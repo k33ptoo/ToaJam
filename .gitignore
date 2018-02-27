@@ -7,4 +7,5 @@
 /build
 /captures
 .externalNativeBuild
-/app
+/app/google-services.json
+*.apk
