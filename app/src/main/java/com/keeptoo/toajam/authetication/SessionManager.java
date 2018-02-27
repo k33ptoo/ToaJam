@@ -57,6 +57,6 @@ public class SessionManager {
 
     public void logOut() {
         SharedPreferences preferences = context.getSharedPreferences("LoginDetails", 0);
-        preferences.edit().clear().commit();
+        preferences.edit().clear().apply();
     }
 }

@@ -1,6 +1,7 @@
 package com.keeptoo.toajam.updates.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -22,6 +24,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.keeptoo.toajam.R;
 import com.keeptoo.toajam.home.HomeActivity;
 import com.keeptoo.toajam.models.Updates;
+import com.keeptoo.toajam.updates.comments.CommentActivity;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -132,6 +135,20 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         }
 
+        vu.ly_clickzone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    Intent intent = new Intent(context, CommentActivity.class);
+                    intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
+                    context.startActivity(intent);
+                    Log.e(getClass().getName().toUpperCase(), "Layout Click" + updats.getPostId());
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+
 
     }
 
@@ -158,13 +175,14 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                 for (final DataSnapshot itemSnapshot : dataSnapshot.getChildren()) {
 
+                    //delete old items
 
-                    itemSnapshot.getRef().removeValue();
+                 /*   itemSnapshot.getRef().removeValue();
                     Log.e(getClass().getName(), "Update Remove Old Items: " + itemSnapshot.getKey());
                     if (commentsRef != null) {
                         commentsRef.child(itemSnapshot.getKey()).removeValue();
 
-                    }
+                    }*/
 
                 }
             }
@@ -239,6 +257,8 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         ImageView iv_appreciations;
         @BindView(R.id.iv_up_img)
         CircleImageView iv_up_userimg;
+        @BindView(R.id.ly_clickzone)
+        LinearLayout ly_clickzone;
 
 
         public VHUpdates(View itemView) {

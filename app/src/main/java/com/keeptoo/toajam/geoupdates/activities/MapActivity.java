@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -14,13 +15,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
@@ -38,9 +37,12 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.getkeepsafe.taptargetview.TapTarget;
+import com.getkeepsafe.taptargetview.TapTargetSequence;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -49,6 +51,9 @@ import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -72,10 +77,12 @@ import com.keeptoo.toajam.geoupdates.adapters.CustomInfoWindowAdapter;
 import com.keeptoo.toajam.geoupdates.adapters.NotesAdapter;
 import com.keeptoo.toajam.geoupdates.adapters.TowsAdapter;
 import com.keeptoo.toajam.geoupdates.service.GeofenceRegistrationService;
+import com.keeptoo.toajam.geoupdates.service.LocationUpdateService;
 import com.keeptoo.toajam.geoupdates.utililies.Constants;
 import com.keeptoo.toajam.home.HomeActivity;
 import com.keeptoo.toajam.models.Notes;
 import com.keeptoo.toajam.models.Towers;
+import com.keeptoo.toajam.settings.SettingsActivity;
 import com.keeptoo.toajam.utils.FConstants;
 import com.keeptoo.toajam.utils.InteractionUtils;
 
@@ -126,6 +133,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private TowsAdapter towsAdapter;
 
 
+    final static int REQUEST_LOCATION = 199;
+
+
     private double lat;
     private double lng;
 
@@ -134,7 +144,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private BottomSheetDialog bottomSheetDialog;
 
     private BottomSheetDialog towbottomSheetDialog;
+    private Context context;
 
+    private InteractionUtils interactionUtils = new InteractionUtils();
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -149,86 +161,176 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.maps_frament);
-
         sessionManager = new SessionManager(this);
-
-
-        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Location Disabled", Snackbar.LENGTH_INDEFINITE);
-        if (!isGPSEnabled(this)) {
-            snackbar.setAction("Enable", new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                }
-            }).setActionTextColor(getResources().getColor(android.R.color.holo_red_light))
-                    .show();
-        } else
-            snackbar.dismiss();
-
-
+        context = MapActivity.this;
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Your Zone");
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
+        getSupportActionBar().setTitle("Geo-Updates");
         googleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this).build();
 
+        if (!isGPSEnabled(this)) {
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-            } else
-
-                ActivityCompat.requestPermissions(MapActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION_PERMISSION_CODE);
-
+            enableLoc();
 
         }
 
 
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
+
+        //start the service;
+        Intent serviceIntent = new Intent(context, LocationUpdateService.class);
+        context.startService(serviceIntent);
+
         TabLayout tabLayout = findViewById(R.id.tab_items);
 
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                if (tab.getPosition() == 0) {
-
-                    loadNoteMarkers();
-                    bottomSheetDialog.show();
-                } else if (tab.getPosition() == 1) {
-                    loadTowMarkers();
-                    towbottomSheetDialog.show();
+        if (isPermissionGranted() == true) {
+            tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                @Override
+                public void onTabSelected(TabLayout.Tab tab) {
+                    if (tab.getPosition() == 0) {
+                        loadNoteMarkers();
+                        bottomSheetDialog.show();
+                    } else if (tab.getPosition() == 1) {
+                        loadTowMarkers();
+                        towbottomSheetDialog.show();
+                    }
                 }
-            }
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
+                @Override
+                public void onTabUnselected(TabLayout.Tab tab) {
 
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                if (tab.getPosition() == 0) {
-
-                    loadNoteMarkers();
-                    bottomSheetDialog.show();
-                } else if (tab.getPosition() == 1) {
-                    loadTowMarkers();
-                    towbottomSheetDialog.show();
                 }
-            }
-        });
+
+                @Override
+                public void onTabReselected(TabLayout.Tab tab) {
+                    if (tab.getPosition() == 0) {
+                        loadNoteMarkers();
+                        bottomSheetDialog.show();
+                    } else if (tab.getPosition() == 1) {
+                        loadTowMarkers();
+                        towbottomSheetDialog.show();
+                    }
+                }
+            });
+
+            addNoteBottomSheet();
+            showTowsBottomSheet();
+        } else
+            Toast.makeText(context, "Please allow location permission to proceed", Toast.LENGTH_SHORT).show();
 
 
-        addNoteBottomSheet();
-        showTowsBottomSheet();
+        boolean firstTimeRun = interactionUtils.getFirstTimeRun(this,"map_tap");
+
+        if (firstTimeRun == true) {
+            showTapTargetSequence();
+        }
+
+    }
+
+
+    private void enableLoc() {
+
+        if (googleApiClient == null) {
+            googleApiClient = new GoogleApiClient.Builder(MapActivity.this)
+                    .addApi(LocationServices.API)
+                    .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                        @Override
+                        public void onConnected(Bundle bundle) {
+
+                        }
+
+                        @Override
+                        public void onConnectionSuspended(int i) {
+                            googleApiClient.connect();
+                        }
+                    })
+                    .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                        @Override
+                        public void onConnectionFailed(ConnectionResult connectionResult) {
+
+                            Log.d("Location error", "Location error " + connectionResult.getErrorCode());
+                        }
+                    }).build();
+            googleApiClient.connect();
+
+            LocationRequest locationRequest = LocationRequest.create();
+            locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+            locationRequest.setInterval(30 * 1000);
+            locationRequest.setFastestInterval(5 * 1000);
+            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                    .addLocationRequest(locationRequest);
+
+            builder.setAlwaysShow(true);
+
+            PendingResult<LocationSettingsResult> result =
+                    LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+            result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+                @Override
+                public void onResult(LocationSettingsResult result) {
+                    final Status status = result.getStatus();
+                    switch (status.getStatusCode()) {
+                        case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                            try {
+                                // Show the dialog by calling startResolutionForResult(),
+                                // and check the result in onActivityResult().
+                                status.startResolutionForResult(MapActivity.this, REQUEST_LOCATION);
+
+                                finish();
+                            } catch (IntentSender.SendIntentException e) {
+                                // Ignore the error.
+                            }
+                            break;
+                    }
+                }
+            });
+        }
+    }
+
+
+    private void showTapTargetSequence() {
+
+        TapTargetSequence sequence = new TapTargetSequence(this);
+        sequence.continueOnCancel(true);
+
+        sequence.targets(
+
+                //add notes
+                TapTarget.forView(findViewById(R.id.tab_items), "Notes", "See or share location based update/note\n Call a  tow closer to you")
+                        .dimColor(R.color.colorPrimaryDark)
+                        .outerCircleColor(R.color.colorAccent)
+                        .targetCircleColor(R.color.colorWhite)
+                        .icon(this.getResources().getDrawable(R.drawable.ic_action_plus, null))
+                        .cancelable(false)
+                        .textColor(android.R.color.white))
+
+
+                .listener(new TapTargetSequence.Listener() {
+                    // This listener will tell us when interesting(tm) events happen in regards
+                    // to the sequence
+                    @Override
+                    public void onSequenceFinish() {
+                        // Yay
+                        interactionUtils.storeFirstTimeRun(MapActivity.this,"map_tap");
+                    }
+
+                    @Override
+                    public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
+
+                    }
+
+
+                    @Override
+                    public void onSequenceCanceled(TapTarget lastTarget) {
+                        // Boo
+                    }
+                }).start();
+
+
     }
 
     public void rebootActivity() {
@@ -458,7 +560,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     });
 */
 
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 16f));
+                    try {
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 16f));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
                 }
 
@@ -579,12 +685,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         switch (item.getItemId()) {
             case R.id.notes:
                 //show all notes
-                loadNoteMarkers();
 
                 break;
-           /* case R.id.action_stop_monitor:
-                stopGeoFencing();
-                break;*/
+            case R.id.action_settings:
+                startActivity(new Intent(MapActivity.this, SettingsActivity.class));
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -734,14 +839,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     public boolean isPermissionGranted() {
 
+
         if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.CALL_PHONE)
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 Log.v(TAG, "Permission is granted");
                 return true;
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{
-                        Manifest.permission.CALL_PHONE
+                        Manifest.permission.ACCESS_FINE_LOCATION
                 }, 1);
                 return false;
             }
@@ -963,8 +1069,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                 for (DataSnapshot itemSnapshot : dataSnapshot.getChildren()) {
 
-                    Log.e(getClass().getName(), "Note Clean Up " + itemSnapshot.getRef());
-                    itemSnapshot.getRef().removeValue();
+                  /*  Log.e(getClass().getName(), "Note Clean Up " + itemSnapshot.getRef());
+                    itemSnapshot.getRef().removeValue();*/
                 }
 
             }
@@ -975,6 +1081,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
     }
+
 
     private void loadNoteMarkers() {
         new Handler().postDelayed(new Runnable() {
@@ -995,29 +1102,28 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     Double lat = snapshot.child("latitude").getValue(Double.class);
                     Double lng = snapshot.child("longitude").getValue(Double.class);
 
-                    //note information
-                    String place = snapshot.child("location").getValue(String.class);
-                    String name = snapshot.child("name").getValue(String.class);
-                    String note = snapshot.child("note").getValue(String.class);
-                    String postId = snapshot.child("post_id").getValue(String.class);
 
                     Notes values = snapshot.getValue(Notes.class);
 
                     //populate list
                     notes.add(values);
                     //clean up
+
                     //custom markers
                     LatLng loc = new LatLng(lat, lng);
 
                     if (loc != null) {
                         googleMap.addMarker(new MarkerOptions()
-                                .position(loc).title(place + " : " + name)
+                                .position(loc).title(values.location + " : " + values.name)
                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_note_marker))
-                                .snippet(String.valueOf(note))).showInfoWindow();
+                                .snippet(String.valueOf(values.note))).showInfoWindow();
                     }
+
+
                 }
                 notes1 = notes;
                 initNotesRecy(notes1);
+
             }
 
             @Override

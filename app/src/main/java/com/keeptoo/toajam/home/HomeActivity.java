@@ -6,6 +6,8 @@ import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -33,6 +35,9 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.getkeepsafe.taptargetview.TapTarget;
+import com.getkeepsafe.taptargetview.TapTargetSequence;
+import com.getkeepsafe.taptargetview.TapTargetView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
@@ -45,6 +50,8 @@ import com.keeptoo.toajam.authetication.SigninFragment;
 import com.keeptoo.toajam.chat.ChatFragment;
 import com.keeptoo.toajam.firebase_utils.FireBaseUtilities;
 import com.keeptoo.toajam.geoupdates.activities.MapActivity;
+import com.keeptoo.toajam.geoupdates.service.LocationUpdateService;
+import com.keeptoo.toajam.settings.SettingsActivity;
 import com.keeptoo.toajam.updates.UpdatesFragment;
 import com.keeptoo.toajam.utils.FConstants;
 import com.keeptoo.toajam.utils.InteractionUtils;
@@ -79,8 +86,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     SigninFragment signinFragment = new SigninFragment();
     UpdatesFragment updatesFragment = new UpdatesFragment();
     FragmentManager fm;
-
+    InteractionUtils interactionUtils = new InteractionUtils();
     FloatingActionButton fab;
+
+    Context context;
 
 
     @Override
@@ -89,6 +98,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_home);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        context = HomeActivity.this;
 
 
         user = FirebaseAuth.getInstance().getCurrentUser();
@@ -139,6 +150,17 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
 
         //-----Handle signin end-----------
+
+
+        //introduction
+        boolean firstTimeRun = interactionUtils.getFirstTimeRun(this, "home_tap");
+
+        if (firstTimeRun == true) {
+            showTapTargetSequence();
+        }
+
+
+
     }
 
 
@@ -191,6 +213,92 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
 
+    private void showTapTarget(int view, String title, String content, Drawable icon) {
+
+        TapTargetView.showFor(HomeActivity.this,
+                TapTarget.forView(findViewById(view), title, content)
+                        .outerCircleColor(R.color.colorAccent)
+                        .outerCircleAlpha(0.96f)
+                        .targetCircleColor(R.color.colorWhite)
+                        .titleTextSize(20)
+                        .titleTextColor(R.color.colorWhite)
+                        .descriptionTextSize(10)
+                        .descriptionTextColor(R.color.colorWhite)
+                        .textColor(R.color.colorWhite)
+                        .textTypeface(Typeface.SANS_SERIF)
+                        .dimColor(R.color.common_google_signin_btn_text_light_default)
+                        .icon(icon)
+                        .drawShadow(true)
+                        .cancelable(false)
+                        .tintTarget(true)
+                        .transparentTarget(false)
+                        .targetRadius(60),
+                new TapTargetView.Listener() {
+                    @Override
+                    public void onTargetClick(TapTargetView view) {
+                        super.onTargetClick(view);
+
+                    }
+                });
+    }
+
+
+    private void showTapTargetSequence() {
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        TapTargetSequence sequence = new TapTargetSequence(this);
+        sequence.continueOnCancel(true);
+
+        sequence.targets(
+           /*     //search
+                TapTarget.forToolbarMenuItem(toolbar, R.id.search, "Search", "Search for specific update")
+                        .dimColor(android.R.color.white)
+                        .outerCircleColor(R.color.colorWhite)
+                        .targetCircleColor(R.color.colorPrimary)
+                        .icon(this.getResources().getDrawable(R.drawable.ic_action_plus, null))
+                        .cancelable(false)
+                        .textColor(android.R.color.white),
+                //settings
+                TapTarget.forToolbarMenuItem(toolbar, R.id.action_settings, "Settings", "Click to change notification settings")
+                        .dimColor(android.R.color.white)
+                        .outerCircleColor(R.color.colorWhite)
+                        .targetCircleColor(R.color.colorPrimary)
+                        .icon(this.getResources().getDrawable(R.drawable.ic_action_plus, null))
+                        .cancelable(false)
+                        .textColor(android.R.color.white),*/
+                //add update
+                TapTarget.forView(findViewById(R.id.fab), "Update", "Click to share traffic update")
+                        .dimColor(R.color.colorPrimaryDark)
+                        .outerCircleColor(R.color.colorAccent)
+                        .targetCircleColor(R.color.colorWhite)
+                        .icon(this.getResources().getDrawable(R.drawable.ic_action_plus, null))
+                        .cancelable(false)
+                        .textColor(android.R.color.white))
+
+                .listener(new TapTargetSequence.Listener() {
+                    // This listener will tell us when interesting(tm) events happen in regards
+                    // to the sequence
+                    @Override
+                    public void onSequenceFinish() {
+                        // Yay
+                        interactionUtils.storeFirstTimeRun(HomeActivity.this, "home_tap");
+                    }
+
+                    @Override
+                    public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
+
+                    }
+
+
+                    @Override
+                    public void onSequenceCanceled(TapTarget lastTarget) {
+                        // Boo
+                    }
+                }).start();
+
+
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -200,6 +308,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
             return true;
         } else if (id == R.id.search) {
             return true;
@@ -222,6 +331,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         if (id == R.id.nav_updates) {
             loadFrag(updatesFragment);
+        } else if (id == R.id.nav_settings) {
+            startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+
         } else if (id == R.id.nav_mylocation) {
             startActivity(new Intent(HomeActivity.this, MapActivity.class));
 
@@ -414,7 +526,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         } else
             showCountryDialog();
     }
-
 
 
 }

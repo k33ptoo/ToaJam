@@ -219,7 +219,7 @@ public class UpdatesFragment extends Fragment {
                     View v = recyclerView.findChildViewUnder(e.getX(), e.getY());
                     final Updates updats = adapter.updates.get(recyclerView.getChildAdapterPosition(v));
 
-
+                    // ----------appeciation------------------
                     final ImageView iv_apps = recyclerView.findViewHolderForAdapterPosition(recyclerView.getChildAdapterPosition(v)).itemView.findViewById(R.id.iv_updates_appreciation);
                     iv_apps.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -229,8 +229,28 @@ public class UpdatesFragment extends Fragment {
                             new FireBaseUtilities().onAppClicked(reference);
 
 
+
                         }
                     });
+                    // ---------- end appeciation ----------------------
+
+
+
+                    //load comments activity
+                    final TextView tv_comments = recyclerView.findViewHolderForAdapterPosition(recyclerView.getChildAdapterPosition(v)).itemView.findViewById(R.id.txt_updates_date_coms);
+                    tv_comments.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+
+                            Intent intent = new Intent(getActivity(), CommentActivity.class);
+                            intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
+
+                            startActivity(intent);
+
+                        }
+                    });
+
+
                     return true;
                 }
 
