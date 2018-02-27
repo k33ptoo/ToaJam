@@ -2,6 +2,7 @@ package com.keeptoo.toajam.utils;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
 import android.view.View;
@@ -34,7 +35,7 @@ public class InteractionUtils extends Activity {
 
             return false;
         } else {
-           // textInputEditText.setErrorEnabled(false);
+            // textInputEditText.setErrorEnabled(false);
         }
         return true;
     }
@@ -45,7 +46,7 @@ public class InteractionUtils extends Activity {
 
             return false;
         } else {
-          //  textInputEditText.setErrorEnabled(false);
+            //  textInputEditText.setErrorEnabled(false);
         }
         return true;
     }
@@ -58,6 +59,20 @@ public class InteractionUtils extends Activity {
         } else {
         }
         return true;
+    }
+
+
+    public boolean getFirstTimeRun(Context context, String name) {
+        SharedPreferences prefs = context.getSharedPreferences(name, MODE_PRIVATE);
+        boolean firstTimeRun = prefs.getBoolean("firstRun", true);
+        return firstTimeRun;
+    }
+
+    public void storeFirstTimeRun(Context context, String name) {
+        SharedPreferences prefs = context.getSharedPreferences(name, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("firstRun", false);
+        editor.apply();
     }
 
 }

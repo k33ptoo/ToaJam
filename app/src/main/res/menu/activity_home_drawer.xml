@@ -15,7 +15,12 @@
         <item
             android:id="@+id/nav_mylocation"
             android:icon="@drawable/ic_action_mylocation"
-            android:title="Your Zone" />
+            android:title="Geo-Updates" />
+
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_action_settings"
+            android:title="Settings" />
 <!--
           <item
               android:id="@+id/nav_tow"
@@ -29,6 +34,7 @@
                 android:id="@+id/nav_share"
                 android:icon="@drawable/ic_action_share"
                 android:title="Share" />
+
                 <item
                     android:id="@+id/nav_signout"
                     android:icon="@drawable/ic_action_signout"
