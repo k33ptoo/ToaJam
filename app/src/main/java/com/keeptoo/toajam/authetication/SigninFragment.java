@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
@@ -20,19 +19,18 @@ import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.common.Scopes;
 import com.google.firebase.auth.FirebaseAuth;
 import com.keeptoo.toajam.R;
+import com.keeptoo.toajam.authetication.classes.ApiUtils;
+import com.keeptoo.toajam.authetication.model.CountryModel;
+import com.keeptoo.toajam.authetication.service.CountryService;
 import com.keeptoo.toajam.home.HomeActivity;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.ButterKnife;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
@@ -44,26 +42,27 @@ public class SigninFragment extends Fragment {
     private static final int RC_SIGN_IN = 100;
     private static String COUNTRY;
     FirebaseAuth auth;
-
+    View mRootView;
+    private CountryService countryService;
 
     public SigninFragment() {
 
     }
 
-    View mRootView;
+    public static void setCountry(String country) {
 
+        COUNTRY = country;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (isNetworkAvailable()) {
-            new AsyncTaskClass().execute();
-        }
+        countryService = ApiUtils.getCountryService();
+        loadCountry();
     }
 
-
     public boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager)getActivity().getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null;
     }
@@ -177,55 +176,27 @@ public class SigninFragment extends Fragment {
         Snackbar.make(mRootView, errorMessageRes, Snackbar.LENGTH_LONG).show();
     }
 
-    public static void setCountry(String country) {
+    private void loadCountry() {
 
-        COUNTRY = country;
-    }
+        countryService.getCountry().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Subscriber<CountryModel>() {
+            @Override
+            public void onCompleted() {
 
-
-    private class AsyncTaskClass extends AsyncTask<String, JSONObject, JSONObject> {
-
-
-        @Override
-        protected JSONObject doInBackground(String... strings) {
-
-            OkHttpClient client = new OkHttpClient();
-            Request request = new Request.Builder()
-                    .url("http://ip-api.com/json")
-                    .build();
-
-            try {
-                Response response = client.newCall(request).execute();
-                return new JSONObject(response.body().string());
-            } catch (IOException | JSONException e) {
-                e.printStackTrace();
-                return null;
             }
-        }
 
-
-        @Override
-        protected void onPostExecute(JSONObject data) {
-            try {
-                // super.onPostExecute(data);
-                if (data.getString("country").length() != 0) {
-
-                    setCountry(data.getString("country"));
-                    Log.e("Country Post Execute: ", data.getString("country"));
-
-                    // setCountry("");
-                } else if (data.getString("country").length() == 0) {
-
-                    Log.e("Country - Post Execute", "Nada");
-
-                }
-
-
-            } catch (JSONException e) {
-                e.printStackTrace();
+            @Override
+            public void onError(Throwable throwable) {
+                Log.e(getClass().getName(), "Error: " + throwable.getMessage());
             }
-        }
-    }
 
+            @Override
+            public void onNext(CountryModel countryModel) {
+
+                setCountry(countryModel.getCountry());
+                Log.e(getClass().getName(), "RXCountry: " + countryModel.getCountry());
+            }
+        });
+
+    }
 
 }

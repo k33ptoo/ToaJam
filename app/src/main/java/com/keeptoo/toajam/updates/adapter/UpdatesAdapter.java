@@ -96,8 +96,12 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             public void onDataChange(DataSnapshot dataSnapshot) {
 
 
-                String textCom = updats.getDate() + " | " + dataSnapshot.child(updats.getPostId()).getChildrenCount() + " comments";
-                vu.tv_date.setText(textCom);
+                try {
+                    String textCom = updats.getDate() + " | " + dataSnapshot.child(updats.getPostId()).getChildrenCount() + " comments";
+                    vu.tv_date.setText(textCom);
+                } catch (Exception e) {
+
+                }
 
             }
 

@@ -23,6 +23,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -76,6 +77,7 @@ import com.keeptoo.toajam.authetication.SessionManager;
 import com.keeptoo.toajam.geoupdates.adapters.CustomInfoWindowAdapter;
 import com.keeptoo.toajam.geoupdates.adapters.NotesAdapter;
 import com.keeptoo.toajam.geoupdates.adapters.TowsAdapter;
+import com.keeptoo.toajam.geoupdates.adapters.ViewPagerAdapter;
 import com.keeptoo.toajam.geoupdates.service.GeofenceRegistrationService;
 import com.keeptoo.toajam.geoupdates.service.LocationUpdateService;
 import com.keeptoo.toajam.geoupdates.utililies.Constants;
@@ -100,42 +102,25 @@ import static com.keeptoo.toajam.geoupdates.utililies.Constants.AREA_LANDMARKS;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
+    final static int REQUEST_LOCATION = 199;
     private static final String TAG = "MapActivity";
     private static final int REQUEST_LOCATION_PERMISSION_CODE = 101;
-
     private GoogleMap googleMap;
-
     private GeofencingRequest geofencingRequest;
     private GoogleApiClient googleApiClient;
-
     private boolean isMonitoring = false;
-
     private MarkerOptions markerOptions;
     private PendingIntent pendingIntent;
-
     private Marker towLoc;
-
     private ArrayList<Towers> tows;
-
     private FloatingActionButton addNote;
-
     private SessionManager sessionManager;
-
     private ArrayList<Notes> notes1 = new ArrayList<>();
-
     private RecyclerView recyclerView;
-
     private RecyclerView towRecyclerView;
-
     private Location mlocation;
-
     private NotesAdapter adapter;
     private TowsAdapter towsAdapter;
-
-
-    final static int REQUEST_LOCATION = 199;
-
-
     private double lat;
     private double lng;
 
@@ -175,6 +160,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             enableLoc();
 
         }
+
+
+        //setup viewpager
+        ViewPager viewPager = findViewById(R.id.vp_geoupdates);
+        ViewPagerAdapter viewPagerAdapter = new ViewPagerAdapter(this, getSupportFragmentManager());
+        viewPager.setAdapter(viewPagerAdapter);
+
+        TabLayout tabLayout2 = findViewById(R.id.tab_geoupdates);
+        tabLayout2.setupWithViewPager(viewPager);
+
+        //end of viewpager;
 
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -224,7 +220,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             Toast.makeText(context, "Please allow location permission to proceed", Toast.LENGTH_SHORT).show();
 
 
-        boolean firstTimeRun = interactionUtils.getFirstTimeRun(this,"map_tap");
+        boolean firstTimeRun = interactionUtils.getFirstTimeRun(this, "map_tap");
 
         if (firstTimeRun == true) {
             showTapTargetSequence();
@@ -315,7 +311,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     @Override
                     public void onSequenceFinish() {
                         // Yay
-                        interactionUtils.storeFirstTimeRun(MapActivity.this,"map_tap");
+                        interactionUtils.storeFirstTimeRun(MapActivity.this, "map_tap");
                     }
 
                     @Override
@@ -1204,7 +1200,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Log.d(TAG, "Google Api Client Connected");
         isMonitoring = true;
         startLocationMonitor();
-       /* startGeofencing();*/
+        /* startGeofencing();*/
     }
 
     @Override
