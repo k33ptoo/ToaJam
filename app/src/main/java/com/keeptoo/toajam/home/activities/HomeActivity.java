@@ -1,7 +1,6 @@
-package com.keeptoo.toajam.home;
+package com.keeptoo.toajam.home.activities;
 
 import android.app.AlertDialog;
-import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -10,15 +9,19 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
 import android.support.design.widget.TextInputEditText;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -30,29 +33,37 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.airbnb.lottie.LottieAnimationView;
 import com.getkeepsafe.taptargetview.TapTarget;
 import com.getkeepsafe.taptargetview.TapTargetSequence;
 import com.getkeepsafe.taptargetview.TapTargetView;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.hbb20.CountryCodePicker;
 import com.keeptoo.toajam.R;
 import com.keeptoo.toajam.authetication.SessionManager;
-import com.keeptoo.toajam.authetication.SigninFragment;
-import com.keeptoo.toajam.chat.ChatFragment;
+import com.keeptoo.toajam.authetication.SigninActivity;
 import com.keeptoo.toajam.firebase_utils.FireBaseUtilities;
 import com.keeptoo.toajam.geoupdates.activities.MapActivity;
-import com.keeptoo.toajam.geoupdates.service.LocationUpdateService;
+import com.keeptoo.toajam.home.adapters.HomeViewPagerAdapter;
+import com.keeptoo.toajam.home.fragments.UpdatesFragment;
 import com.keeptoo.toajam.settings.SettingsActivity;
-import com.keeptoo.toajam.updates.UpdatesFragment;
 import com.keeptoo.toajam.utils.FConstants;
 import com.keeptoo.toajam.utils.InteractionUtils;
 import com.squareup.picasso.Picasso;
@@ -67,30 +78,22 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
 
+    public static String Country;
     @BindView(R.id.txt_user_name)
     TextView tv_name;
-
     @BindView(R.id.txt_user_email)
     TextView tv_email;
-
     @BindView(R.id.img_profile)
     CircleImageView iv_profile;
-
     FirebaseUser user;
-
-    public static String Country;
-
     SessionManager sessionManager;
-
-    ChatFragment chatFragment = new ChatFragment();
-    SigninFragment signinFragment = new SigninFragment();
     UpdatesFragment updatesFragment = new UpdatesFragment();
     FragmentManager fm;
     InteractionUtils interactionUtils = new InteractionUtils();
     FloatingActionButton fab;
-
     Context context;
-
+    private AdView mAdView;
+    private Boolean exit = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,26 +130,41 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+
         View v = navigationView.getHeaderView(0);
 
         ButterKnife.bind(this, v);
 
 
-        //-----Handle signin start-----------
+        //setup viewpager
+        ViewPager viewPager = findViewById(R.id.vp_home);
+        HomeViewPagerAdapter viewPagerAdapter = new HomeViewPagerAdapter(this, getSupportFragmentManager());
+        viewPager.setAdapter(viewPagerAdapter);
 
+        TabLayout tabLayout2 = findViewById(R.id.tab_home);
+        tabLayout2.setupWithViewPager(viewPager);
+
+        //end of viewpager
+
+        //-----Handle signin start-----------
 
         if (!sessionManager.isUserLogedOut()) {
             if (!isNetworkAvailable()) {
-                loadFrag(updatesFragment);
-                new InteractionUtils().showToast(getApplicationContext(), "Please check your connection", Toast.LENGTH_LONG);
-            } else
-                loadFrag(updatesFragment);
+                Toast.makeText(getApplicationContext(),
+                        "Please check your connection", Toast.LENGTH_SHORT).show();
+            } else {
 
-            loadUserInfo();
-            Log.e(getClass().getName(), "Session Manager - " + sessionManager.getEmail());
+                loadUserInfo();
+                try {
+                    loadAds();
+                } catch (Exception e) {
+
+                }
+                Log.e(getClass().getName(), "Session Manager - " + sessionManager.getEmail());
+            }
 
         } else {
-            loadFrag(signinFragment);
+            startActivity(new Intent(this, SigninActivity.class));
         }
 
         //-----Handle signin end-----------
@@ -160,6 +178,66 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
 
 
+    }
+
+
+    private void loadAds() { //load ads
+        final RelativeLayout layout_ad = findViewById(R.id.rel_adview);
+        mAdView = findViewById(R.id.adView);
+
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+
+        final ImageView imageView = findViewById(R.id.expandedImage);
+        mAdView.setAdListener(new AdListener() {
+                                  @Override
+                                  public void onAdFailedToLoad(int i) {
+
+                                      imageView.setVisibility(View.VISIBLE);
+                                      layout_ad.setVisibility(View.INVISIBLE);
+                                      super.onAdFailedToLoad(i);
+                                  }
+
+                                  @Override
+                                  public void onAdLoaded() {
+
+                                      //show custom ad
+                                      loadCustomAd(imageView);
+
+                                      imageView.postDelayed(new Runnable() {
+                                          @Override
+                                          public void run() {
+                                              imageView.setVisibility(View.INVISIBLE);
+                                              layout_ad.setVisibility(View.VISIBLE);
+
+                                              LottieAnimationView animationView = findViewById(R.id.animation_view);
+                                              animationView.setAnimation("pinjump.json");
+                                              animationView.loop(true);
+                                              animationView.playAnimation();
+
+                                          }
+                                      }, 30000);
+
+
+                                      super.onAdLoaded();
+                                  }
+                              }
+
+        );
+    }
+//load custom advert
+
+    private void loadCustomAd(final ImageView view) {
+
+        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+        storageReference.child(HomeActivity.Country).child("toolbar.png").getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                Log.e(getClass().getName(), "AD URL " + uri);
+                Picasso.with(getApplicationContext()).load(uri).into(view);
+            }
+        });
+
 
     }
 
@@ -170,8 +248,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         return activeNetworkInfo != null;
     }
 
-    private Boolean exit = false;
-
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -181,7 +257,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             if (exit) {
                 finish(); // finish activity
             } else {
-                loadFrag(updatesFragment);
+                //loadFrag(updatesFragment);
                 Toast.makeText(this, "Press Back again to Exit.",
                         Toast.LENGTH_SHORT).show();
                 exit = true;
@@ -196,11 +272,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    // fragment loader
-    public void loadFrag(Fragment fragment) {
-        fm.beginTransaction().replace(R.id.frame_container, fragment)
-                .addToBackStack(null).commit();
-    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -208,7 +280,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         getMenuInflater().inflate(R.menu.home, menu);
         MenuItem search = menu.findItem(R.id.search);
         SearchView searchView = (SearchView) MenuItemCompat.getActionView(search);
-        updatesFragment.search(searchView);
+       // updatesFragment.search(searchView);
         return true;
     }
 
@@ -271,7 +343,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                         .dimColor(R.color.colorPrimaryDark)
                         .outerCircleColor(R.color.colorAccent)
                         .targetCircleColor(R.color.colorWhite)
-                        .icon(this.getResources().getDrawable(R.drawable.ic_action_plus, null))
+                        .icon(ContextCompat.getDrawable(this,R.drawable.ic_action_plus))
                         .cancelable(false)
                         .textColor(android.R.color.white))
 
@@ -325,13 +397,15 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         int id = item.getItemId();
 
-       /* if (id == R.id.nav_chat) {
-            loadFrag(chatFragment);
-        }*/
+        //TODO : Remove and use fragment instead
+       /* if (id == R.id.nav_twitter) {
+            // loadFrag(twitterFragment);
+        }
 
         if (id == R.id.nav_updates) {
-            loadFrag(updatesFragment);
-        } else if (id == R.id.nav_settings) {
+            //loadFrag(updatesFragment);
+        } else*/
+        if (id == R.id.nav_settings) {
             startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
 
         } else if (id == R.id.nav_mylocation) {
@@ -397,6 +471,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         p.onPositive(new MaterialDialog.SingleButtonCallback() {
             @Override
             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+
                 sessionManager.setCountry(cpp.getSelectedCountryName());
                 rebootActivity();
 
@@ -437,7 +512,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         tv_loc.setText("How's traffic where you are?");
 
         if (user.getPhotoUrl() == null) {
-            imageView.setImageDrawable(this.getResources().getDrawable(R.drawable.ic_action_icon_placeholder_white, null));
+            imageView.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.ic_action_icon_placeholder_white));
 
         } else
             Picasso.with(this).load(user.getPhotoUrl()).into(imageView);
@@ -498,7 +573,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             if (user.getPhotoUrl() != null) {
                 Picasso.with(this).load(photoUrl).into(iv_profile);
             } else
-                iv_profile.setImageDrawable(this.getResources().getDrawable(R.drawable.ic_action_icon_placeholder_white, null));
+                iv_profile.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_action_icon_placeholder_white));
 
 
             // add user to database

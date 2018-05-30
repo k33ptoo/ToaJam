@@ -1,4 +1,4 @@
-package com.keeptoo.toajam.updates.utils;
+package com.keeptoo.toajam.home.utils;
 
 import android.content.Context;
 import android.support.v7.widget.LinearLayoutManager;

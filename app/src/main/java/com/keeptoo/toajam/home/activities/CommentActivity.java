@@ -1,7 +1,8 @@
-package com.keeptoo.toajam.updates.comments;
+package com.keeptoo.toajam.home.activities;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -38,10 +39,8 @@ import static com.keeptoo.toajam.firebase_utils.FirebaseUtils.getUid;
 
 public class CommentActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private static final String TAG = "CommentsActivity";
-
     public static final String EXTRA_POST_KEY = "post_key";
-
+    private static final String TAG = "CommentsActivity";
     private DatabaseReference mPostReference;
     private DatabaseReference mCommentsReference;
     private ValueEventListener mPostListener;
@@ -111,7 +110,13 @@ public class CommentActivity extends AppCompatActivity implements View.OnClickLi
                 // Get Post object and use the values to update the UI
                 Updates post = dataSnapshot.getValue(Updates.class);
                 // [START_EXCLUDE]
-                mAuthorView.setText(post.author);
+
+                String firsName = post.author;
+                if (firsName.contains(" ")) {
+                    firsName = firsName.substring(0, firsName.indexOf(" "));
+                    mAuthorView.setText(firsName);
+
+                }
                 mTitleView.setText(post.getDate());
                 mBodyView.setText(post.body);
 
@@ -120,7 +125,7 @@ public class CommentActivity extends AppCompatActivity implements View.OnClickLi
                     Picasso.with(CommentActivity.this).load(post.getPhotourl()).into(authorPhoto);
 
                 } else
-                    authorPhoto.setImageDrawable(getApplicationContext().getResources().getDrawable(R.drawable.ic_action_icon_placeholder_white, null));
+                    authorPhoto.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_action_icon_placeholder_white));
 
                 Log.e(getClass().getName(), "Context " + getApplicationContext());
 
@@ -332,7 +337,12 @@ public class CommentActivity extends AppCompatActivity implements View.OnClickLi
         @Override
         public void onBindViewHolder(CommentViewHolder holder, int position) {
             Comment comment = mComments.get(position);
-            holder.authorView.setText(comment.author);
+            String firsName = comment.author;
+            if (firsName.contains(" ")) {
+                firsName = firsName.substring(0, firsName.indexOf(" "));
+
+                holder.authorView.setText(firsName);
+            }
             holder.bodyView.setText(comment.text);
             holder.dateView.setText(comment.date);
 
@@ -341,7 +351,7 @@ public class CommentActivity extends AppCompatActivity implements View.OnClickLi
                 Picasso.with(mContext).load(comment.photoUrl).into(holder.authImage);
             } else
 
-                holder.authImage.setImageDrawable(mContext.getResources().getDrawable(R.drawable.ic_action_icon_placeholder, null));
+                holder.authImage.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_action_icon_placeholder));
 
 
         }

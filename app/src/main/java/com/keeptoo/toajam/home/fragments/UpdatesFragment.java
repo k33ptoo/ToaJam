@@ -1,12 +1,11 @@
-package com.keeptoo.toajam.updates;
+package com.keeptoo.toajam.home.fragments;
 
-import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,29 +17,20 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.airbnb.lottie.LottieAnimationView;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.keeptoo.toajam.R;
 import com.keeptoo.toajam.authetication.SessionManager;
 import com.keeptoo.toajam.firebase_utils.FireBaseUtilities;
-import com.keeptoo.toajam.home.HomeActivity;
+import com.keeptoo.toajam.home.activities.CommentActivity;
+import com.keeptoo.toajam.home.activities.HomeActivity;
+import com.keeptoo.toajam.home.adapters.UpdatesAdapter;
 import com.keeptoo.toajam.models.Updates;
-import com.keeptoo.toajam.updates.adapter.UpdatesAdapter;
-import com.keeptoo.toajam.updates.comments.CommentActivity;
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
@@ -60,17 +50,11 @@ public class UpdatesFragment extends Fragment {
     SwipeRefreshLayout swipeLayout;
 
     FirebaseDatabase database;
-    private DatabaseReference myRef;
-
     UpdatesAdapter adapter;
     ArrayList<Updates> updates1;
-
     SessionManager sessionManager;
-
-
-    private AdView mAdView;
-
     View view;
+    private DatabaseReference myRef;
 
 
     public UpdatesFragment() {
@@ -110,49 +94,7 @@ public class UpdatesFragment extends Fragment {
         });
 
 
-        //load ads
-        final RelativeLayout layout_ad = view.findViewById(R.id.rel_adview);
-        mAdView = view.findViewById(R.id.adView);
 
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-
-        final ImageView imageView = view.findViewById(R.id.expandedImage);
-        mAdView.setAdListener(new AdListener() {
-                                  @Override
-                                  public void onAdFailedToLoad(int i) {
-
-                                      imageView.setVisibility(View.VISIBLE);
-                                      layout_ad.setVisibility(View.INVISIBLE);
-                                      super.onAdFailedToLoad(i);
-                                  }
-
-                                  @Override
-                                  public void onAdLoaded() {
-
-                                      //show custom ad
-                                      loadCustomAd(imageView);
-
-                                      imageView.postDelayed(new Runnable() {
-                                          @Override
-                                          public void run() {
-                                              imageView.setVisibility(View.INVISIBLE);
-                                              layout_ad.setVisibility(View.VISIBLE);
-
-                                              LottieAnimationView animationView = view.findViewById(R.id.animation_view);
-                                              animationView.setAnimation("pinjump.json");
-                                              animationView.loop(true);
-                                              animationView.playAnimation();
-
-                                          }
-                                      }, 30000);
-
-
-                                      super.onAdLoaded();
-                                  }
-                              }
-
-        );
 
         return view;
     }
@@ -229,11 +171,9 @@ public class UpdatesFragment extends Fragment {
                             new FireBaseUtilities().onAppClicked(reference);
 
 
-
                         }
                     });
                     // ---------- end appeciation ----------------------
-
 
 
                     //load comments activity
@@ -296,17 +236,8 @@ public class UpdatesFragment extends Fragment {
 
             @Override
             public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
-                final View child = rv.findChildViewUnder(e.getX(), e.getY());
-                if (child != null && gestureDetector.onTouchEvent(e)) {
-                    int position = rv.getChildAdapterPosition(child);
-                    String cont = ((TextView) rv.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.txt_update_desc)).getText().toString();
-                    String title = ((TextView) rv.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.txt_updatename)).getText().toString();
-
-                }
-
                 return false;
             }
-
 
             @Override
             public void onTouchEvent(RecyclerView rv, MotionEvent e) {
@@ -326,21 +257,6 @@ public class UpdatesFragment extends Fragment {
     }
 
 
-    //load custom advert
-
-    private void loadCustomAd(final ImageView view) {
-
-        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
-        storageReference.child(HomeActivity.Country).child("toolbar.png").getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-            @Override
-            public void onSuccess(Uri uri) {
-                Log.e(getClass().getName(), "AD URL " + uri);
-                Picasso.with(getActivity().getApplicationContext()).load(uri).into(view);
-            }
-        });
-
-
-    }
 
     //search through recyclerview
 

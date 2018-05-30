@@ -10,7 +10,7 @@
     app:layout_behavior="@string/bottom_sheet_behavior">
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/lv_tows"
+        android:id="@+id/towersRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

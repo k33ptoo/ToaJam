@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".home.SplashActivity"
+            android:name=".home.activities.SplashActivity"
             android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -43,25 +43,27 @@
             android:value="@string/api_key" />
 
         <activity
-            android:name=".home.HomeActivity"
+            android:name=".home.activities.HomeActivity"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".geoupdates.activities.MapActivity"
-            android:parentActivityName=".home.HomeActivity" />
+            android:parentActivityName=".home.activities.HomeActivity" />
         <activity
-            android:name=".updates.comments.CommentActivity"
+            android:name=".home.activities.CommentActivity"
             android:label="@string/title_activity_comments"
-            android:parentActivityName=".home.HomeActivity" />
+            android:parentActivityName=".home.activities.HomeActivity" />
         <activity android:name=".ads.AdsActiviy" />
         <activity
             android:name=".settings.SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".home.HomeActivity" />
+            android:parentActivityName=".home.activities.HomeActivity" />
 
         <service
             android:name=".geoupdates.service.LocationUpdateService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
+
+        <activity android:name=".authetication.SigninActivity"></activity>
     </application>
 
 </manifest>

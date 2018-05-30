@@ -1,8 +1,9 @@
-package com.keeptoo.toajam.updates.adapter;
+package com.keeptoo.toajam.home.adapters;
 
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,9 +23,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.keeptoo.toajam.R;
-import com.keeptoo.toajam.home.HomeActivity;
+import com.keeptoo.toajam.home.activities.CommentActivity;
+import com.keeptoo.toajam.home.activities.HomeActivity;
 import com.keeptoo.toajam.models.Updates;
-import com.keeptoo.toajam.updates.comments.CommentActivity;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -79,7 +80,12 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         Log.e(getClass().getName(), "Adding item at pos: " + position);
         final Updates updats = updates.get(position);
         final VHUpdates vu = (VHUpdates) holder;
-        vu.tv_tittle.setText(updats.getAuthor());
+        String firsName = updats.getAuthor();
+        if (firsName.contains(" ")) {
+            firsName = firsName.substring(0, firsName.indexOf(" "));
+            vu.tv_tittle.setText(firsName);
+
+        }
         vu.tv_info.setText(updats.getBody());
 
 
@@ -114,10 +120,10 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (updats.getNumAppr() >= 1) {
             vu.tv_appreciations.setText(String.valueOf(updats.getNumAppr()));
             if (updats.allappCounts.containsKey(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
-                vu.iv_appreciations.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_appreciated, null));
+                vu.iv_appreciations.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.liked));
 
             } else
-                vu.iv_appreciations.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_appreciate, null));
+                vu.iv_appreciations.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.like));
 
         } else
             //zero appreciations of update
@@ -130,7 +136,7 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 Picasso.with(context).load(updats.getPhotourl()).into(vu.iv_up_userimg);
 
             } else {
-                vu.iv_up_userimg.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_action_icon_placeholder, null));
+                vu.iv_up_userimg.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_action_icon_placeholder));
 
             }
 
@@ -146,7 +152,6 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     Intent intent = new Intent(context, CommentActivity.class);
                     intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
                     context.startActivity(intent);
-                    Log.e(getClass().getName().toUpperCase(), "Layout Click" + updats.getPostId());
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
@@ -169,8 +174,6 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
 
         Query oldItems = reference.orderByChild("timestamp").endAt(cutoff);
-
-        Log.e(getClass().getName(), "Update Old Clean INIT: " + oldItems.getRef() + " Cut Off: " + cutoff);
 
 
         oldItems.addListenerForSingleValueEvent(new ValueEventListener() {

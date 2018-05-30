@@ -15,7 +15,7 @@ import com.google.firebase.database.MutableData;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
-import com.keeptoo.toajam.home.HomeActivity;
+import com.keeptoo.toajam.home.activities.HomeActivity;
 import com.keeptoo.toajam.models.Updates;
 import com.keeptoo.toajam.utils.FConstants;
 

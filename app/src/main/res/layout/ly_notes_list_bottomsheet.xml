@@ -40,6 +40,6 @@
         app:backgroundTint="@color/colorWhite"
         app:layout_anchor="@id/btm_bottom"
         app:layout_anchorGravity="top|end"
-        app:srcCompat="@drawable/ic_send_black_24dp" />
+        android:src="@drawable/ic_menu_send"/>
 
 </android.support.design.widget.CoordinatorLayout>

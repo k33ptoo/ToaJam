@@ -6,12 +6,12 @@ package com.keeptoo.toajam.authetication.service;
 
 import com.keeptoo.toajam.authetication.model.CountryModel;
 
+import retrofit2.Call;
 import retrofit2.http.GET;
-import rx.Observable;
 
 public interface CountryService {
 
     @GET("/json")
-    Observable<CountryModel> getCountry();
+    Call<CountryModel> getCountry();
 
 }

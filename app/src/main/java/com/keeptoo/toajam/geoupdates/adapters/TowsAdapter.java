@@ -14,39 +14,36 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
  * Created by keeptoo on 12/01/2017.
  */
 
-public class TowsAdapter extends RecyclerView.Adapter<TowsAdapter.ViewHolder> {
+public class TowsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
 
-    public ArrayList<Towers> mTows = new ArrayList<>();
-    private LayoutInflater mInflater;
+    public ArrayList<Towers> mTows;
     private Context context;
 
     // data is passed into the constructor
-    public TowsAdapter(Context context, ArrayList<Towers> data) {
-        this.mInflater = LayoutInflater.from(context);
+    public TowsAdapter(ArrayList<Towers> data) {
         this.mTows = data;
-        this.context = context;
     }
 
     // inflates the row layout from xml when needed
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = mInflater.inflate(R.layout.ly_tows_item, parent, false);
-        ViewHolder viewHolder = new ViewHolder(view);
-        return viewHolder;
+        context = parent.getContext();
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.ly_tows_item, parent, false));
     }
 
-    //bind data
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        //set info
+    public void onBindViewHolder(RecyclerView.ViewHolder holder1, int position) {
         final Towers towers = mTows.get(position);
+        ViewHolder holder = (ViewHolder) holder1;
         String phone = "0" + String.valueOf(towers.phone);
         holder.txt_location.setText(towers.location);
         holder.txt_tow_user.setText(towers.name);
@@ -54,6 +51,7 @@ public class TowsAdapter extends RecyclerView.Adapter<TowsAdapter.ViewHolder> {
         Picasso.with(context).load(towers.photourl).into(holder.img_tow_user);
         Log.e(getClass().getName(), "Location Towers: " + towers.location);
     }
+
 
     // total number of rows
     @Override
@@ -64,18 +62,20 @@ public class TowsAdapter extends RecyclerView.Adapter<TowsAdapter.ViewHolder> {
 
     // stores and recycles views as they are scrolled off screen
     public class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView txt_location;
-        public TextView txt_towphone;
-        public TextView txt_tow_user;
-        public CircleImageView img_tow_user;
+
+        @BindView(R.id.tow_location)
+        TextView txt_location;
+        @BindView(R.id.tow_phone)
+        TextView txt_towphone;
+        @BindView(R.id.tow_name)
+        TextView txt_tow_user;
+        @BindView(R.id.tow_user_img)
+        CircleImageView img_tow_user;
 
 
         public ViewHolder(View itemView) {
             super(itemView);
-            txt_location = itemView.findViewById(R.id.tow_location);
-            txt_towphone = itemView.findViewById(R.id.tow_phone);
-            txt_tow_user = itemView.findViewById(R.id.tow_name);
-            img_tow_user = itemView.findViewById(R.id.tow_user_img);
+            ButterKnife.bind(this, itemView);
         }
 
 

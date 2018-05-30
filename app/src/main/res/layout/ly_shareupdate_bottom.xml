@@ -90,7 +90,7 @@
                     android:layout_gravity="bottom"
                     android:background="@color/colorWhite"
                     android:padding="8dp"
-                    android:src="@drawable/ic_send_black_24dp"
+                    android:src="@drawable/ic_menu_send"
                     android:text="Post" />
 
             </LinearLayout>

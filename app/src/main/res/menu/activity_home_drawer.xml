@@ -4,14 +4,14 @@
     tools:showIn="navigation_view">
 
     <group android:checkableBehavior="single">
-        <item
+       <!-- <item
             android:id="@+id/nav_updates"
             android:icon="@drawable/ic_action_updates"
             android:title="Updates" />
-        <!--<item
-            android:id="@+id/nav_chat"
+        <item
+            android:id="@+id/nav_twitter"
             android:icon="@drawable/ic_action_chat"
-            android:title="Chat" />-->
+            android:title="Twitter" />-->
         <item
             android:id="@+id/nav_mylocation"
             android:icon="@drawable/ic_action_mylocation"
