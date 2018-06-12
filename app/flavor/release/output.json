@@ -1,1 +1,1 @@
-[{"outputType":{"type":"APK"},"apkInfo":{"type":"MAIN","splits":[],"versionCode":10},"path":"app-flavor-release.apk","properties":{"packageId":"com.keeptoo.toajam","split":"","minSdkVersion":"22"}}]
+[{"outputType":{"type":"APK"},"apkInfo":{"type":"MAIN","splits":[],"versionCode":14,"versionName":"1.1.8","enabled":true,"outputFile":"app-flavor-release.apk","fullName":"flavorRelease","baseName":"flavor-release"},"path":"app-flavor-release.apk","properties":{}}]

@@ -1,8 +1,9 @@
 package com.keeptoo.toajam.utils;
 
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 public class FConstants {
@@ -20,15 +21,8 @@ public class FConstants {
 
     public static final String COMPLETE_DATE() {
 
-        String weekday, date, hour;
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE", Locale.getDefault());
-
-        Calendar calendar = Calendar.getInstance();
-
-        weekday = dateFormat.format(calendar.getTime());
-        date = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
-        hour = calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE);
-        return weekday + " " + date + "  " + hour;
+        DateFormat df = new SimpleDateFormat("EEEE dd MMMM yyyy hh:mm aaa", Locale.getDefault());
+        return df.format(new Date());
 
     }
 }

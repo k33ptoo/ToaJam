@@ -25,7 +25,7 @@ public class SessionManager {
         editor.putString("Email", email);
         editor.putString("UUID", uuid);
         editor.putString("Country", country);
-        editor.commit();
+        editor.apply();
     }
 
     public String getEmail() {
@@ -38,7 +38,7 @@ public class SessionManager {
         SharedPreferences sharedPreferences = context.getSharedPreferences("LoginDetails", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("Country", country);
-        editor.apply();
+         editor.apply();
 
     }
 

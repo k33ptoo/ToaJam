@@ -15,9 +15,8 @@
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/post_author_photo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_centerHorizontal="true"
             android:src="@drawable/ic_action_icon_placeholder"
             app:civ_border_color="#fff"

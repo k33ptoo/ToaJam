@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".updates.comments.CommentActivity">
+    tools:context=".home.activities.CommentActivity">
 
     <android.support.design.widget.CoordinatorLayout
         android:id="@+id/cord"
@@ -25,7 +25,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:fitsSystemWindows="true"
-                app:contentScrim="?attr/colorPrimary"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
                 <RelativeLayout
@@ -110,7 +109,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="0.2"
-            android:src="@drawable/ic_send_black_24dp"
+            android:src="@drawable/ic_menu_send"
             android:text="Post" />
 
     </LinearLayout>
