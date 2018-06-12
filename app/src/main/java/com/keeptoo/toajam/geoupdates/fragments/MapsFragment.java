@@ -1,11 +1,11 @@
 package com.keeptoo.toajam.geoupdates.fragments;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -15,6 +15,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -22,16 +24,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -51,15 +52,16 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.keeptoo.toajam.R;
-import com.keeptoo.toajam.authetication.SessionManager;
 import com.keeptoo.toajam.geoupdates.adapters.CustomInfoWindowAdapter;
 import com.keeptoo.toajam.geoupdates.service.LocationUpdateService;
 import com.keeptoo.toajam.home.activities.HomeActivity;
 import com.keeptoo.toajam.models.Notes;
 import com.keeptoo.toajam.models.Towers;
 import com.keeptoo.toajam.utils.FConstants;
+import com.yarolegovich.lovelydialog.LovelyCustomDialog;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,6 +69,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
 /**
  * Created by keeptoo on 5/28/2018.
@@ -78,30 +82,33 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
     private GoogleMap googleMap;
     private GoogleApiClient googleApiClient;
     private MarkerOptions markerOptions;
-    private SessionManager sessionManager;
     private Marker towLoc;
-    private ArrayList<Towers> newTowers;
+    private LovelyCustomDialog customDialog;
+    private LovelyCustomDialog noteCustomDiag;
 
     public MapsFragment() {
-        getTows();
-        getNotes();
+
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.ly_map, container, false);
+
         context = container.getContext();
 
-        sessionManager = new SessionManager(context);
         googleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this).build();
 
         if (!isGPSEnabled(context)) {
-
             enableLoc();
+            Snackbar snackbar = Snackbar.make(getActivity().findViewById(R.id.lyRootView), " Seems your Location is off, please turn it on to view nearby notes and tows", Snackbar.LENGTH_LONG);
+            snackbar.setActionTextColor(Color.WHITE);
+            //snackbar.setAction("Enable", view12 -> enableLoc());
+            snackbar.show();
+
         }
 
         //check permission
@@ -113,8 +120,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
             }
         }
 
+
         Intent serviceIntent = new Intent(context, LocationUpdateService.class);
         context.startService(serviceIntent);
+
+//show note dialog
+        FloatingActionButton floatingActionButtonNotes = getActivity().findViewById(R.id.fabSharenote);
+        floatingActionButtonNotes.setOnClickListener(view1 -> showNoteDialog());
 
         return view;
 
@@ -147,12 +159,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
 
     private void enableLoc() {
 
-        if (googleApiClient == null) {
+        if (googleApiClient != null) {
             googleApiClient = new GoogleApiClient.Builder(context)
                     .addApi(LocationServices.API)
                     .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                         @Override
                         public void onConnected(Bundle bundle) {
+                            Log.e(getClass().getName(), "Location result");
 
                         }
 
@@ -161,13 +174,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
                             googleApiClient.connect();
                         }
                     })
-                    .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                        @Override
-                        public void onConnectionFailed(ConnectionResult connectionResult) {
-
-                            Log.d("Location error", "Location error " + connectionResult.getErrorCode());
-                        }
-                    }).build();
+                    .addOnConnectionFailedListener(connectionResult -> Log.d("Location error", "Location error " + connectionResult.getErrorCode())).build();
             googleApiClient.connect();
 
             LocationRequest locationRequest = LocationRequest.create();
@@ -181,22 +188,25 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
 
             PendingResult<LocationSettingsResult> result =
                     LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
-            result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
-                @Override
-                public void onResult(LocationSettingsResult result) {
-                    final Status status = result.getStatus();
-                    switch (status.getStatusCode()) {
-                        case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                            try {
-                                // Show the dialog by calling startResolutionForResult(),
-                                // and check the result in onActivityResult().
-                                status.startResolutionForResult(getActivity(), REQUEST_LOCATION);
-
-                            } catch (IntentSender.SendIntentException e) {
-                                // Ignore the error.
-                            }
-                            break;
-                    }
+            result.setResultCallback(result1 -> {
+                final Status status = result1.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        try {
+                            // Show the dialog by calling startResolutionForResult(),
+                            // and check the result in onActivityResult().
+                            status.startResolutionForResult(getActivity(), REQUEST_LOCATION);
+                            // getActivity().finish();
+                        } catch (IntentSender.SendIntentException e) {
+                            // Ignore the error.
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.CANCELED:
+                       // rebootActivity();
+                        break;
+                    case LocationSettingsStatusCodes.SUCCESS:
+                       // rebootActivity();
+                        break;
                 }
             });
         }
@@ -226,32 +236,37 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
             return;
         }
         googleMap.setMyLocationEnabled(true);
 
         this.googleMap = googleMap;
 //-------------load map items here-----------
-        getNotes();
-        getTows();
-        loadMarkers();
+        loadNotes();
+        loadTows();
 
+        googleMap.setTrafficEnabled(true);
 
-        googleMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
-            @Override
-            public void onCameraMove() {
-                if (towLoc != null) {
-                    towLoc.remove();
-                }
-                markerOptions = new MarkerOptions()
-                        .title("Add Tow Here")
-                        .snippet(" ..")
-                        .position(new LatLng(googleMap.getCameraPosition().target.latitude, googleMap.getCameraPosition().target.longitude));
-                towLoc = googleMap.addMarker(markerOptions);
-
-
+        googleMap.setOnCameraMoveListener(() -> {
+            if (towLoc != null) {
+                towLoc.remove();
             }
+            markerOptions = new MarkerOptions()
+                    .title("Add Tow Here")
+                    .snippet(" ..")
+                    .position(new LatLng(googleMap.getCameraPosition().target.latitude, googleMap.getCameraPosition().target.longitude));
+            towLoc = googleMap.addMarker(markerOptions);
+
+
         });
 
         //add tows here :
@@ -263,25 +278,21 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
             public void onCameraIdle() {
 
 
-                googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                    @Override
-                    public boolean onMarkerClick(Marker marker) {
+                googleMap.setOnMarkerClickListener(marker -> {
 
-                        if (marker.getTitle().equals("Add Tow Here")) {
-                            towLoc.showInfoWindow();
+                    if (marker.getTitle().equals("Add Tow Here")) {
+                        towLoc.showInfoWindow();
 
-                        } else {
-                            marker.showInfoWindow();
-                            try {
-                                towLoc.remove();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                    } else {
+                        marker.showInfoWindow();
+                        try {
+                            towLoc.remove();
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-
-                        return true;
                     }
 
+                    return true;
                 });
 
 
@@ -294,9 +305,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
                             marker.getPosition();
                             try {
 
-                                showAddTowDiag(marker.getPosition().latitude, marker.getPosition().longitude, getKnownLocation(marker.getPosition().latitude, marker.getPosition().longitude));
-                                //   Toast.makeText(MapActivity.this, city, Toast.LENGTH_SHORT).show();
-                                Log.e(getClass().getName(), "Featured Place : " + getKnownLocation(marker.getPosition().latitude, marker.getPosition().longitude));
+
+                                LatLng latLng = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+
+                                showTowAddDialog(latLng, getKnownLocation(latLng));
+
+
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -417,49 +431,45 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
 
     }
 
-    //shows add tow dialog
-    private void showAddTowDiag(final double lat, final double lng, final String city) {
-        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getContext());
-        LayoutInflater inflater = this.getLayoutInflater();
-        final View dialogView = inflater.inflate(R.layout.ly_addtowservice, null);
-        dialogBuilder.setView(dialogView);
+    private void showTowAddDialog(LatLng latLng, final String city) {
+        customDialog = new LovelyCustomDialog(getContext());
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.ly_addtowservice, null);
+        customDialog
+                .setView(view)
+                .setTopColorRes(R.color.colorPrimary)
+                .setTitle("Add Tow")
+                .setMessage("Add Tow Service Here: " + city)
+                .setListener(R.id.btn_update, v -> addTow(view, latLng, city))
+                .setIcon(R.drawable.ic_tow_truck)
+                .show();
+
+    }
+
+    private void addTow(View dialogView, LatLng latLng, final String city) {
         final TextInputEditText ed_name = dialogView.findViewById(R.id.ed_name);
         final TextInputEditText ed_phone = dialogView.findViewById(R.id.ed_phone);
-        final TextView tv_loca = dialogView.findViewById(R.id.txt_towlocation);
-        tv_loca.setText("Add Tow Service Here: " + "\n" + city);
-        final AlertDialog dialog = dialogBuilder.create();
-        Button button = dialogView.findViewById(R.id.btn_update);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        if (ed_name.getText() == null) {
+            ed_name.setError("enter a valid name");
 
+        } else if (ed_phone.getText().length() < 10 || ed_phone.getText() == null) {
+            ed_phone.setError("enter a valid phone");
+        } else {
+            try {
+                addTows(latLng, city, Integer.valueOf(ed_phone.getText().toString()), String.valueOf(ed_name.getText()), FConstants.COMPLETE_DATE(), true);
 
-                if (ed_name.getText() == null) {
-                    ed_name.setError("enter a valid name");
-
-                } else if (ed_phone.getText().length() < 10 || ed_phone.getText() == null) {
-                    ed_phone.setError("enter a valid phone");
-                } else {
-                    try {
-                        addTows(lat, lng, city, Integer.valueOf(ed_phone.getText().toString()), String.valueOf(ed_name.getText()), FConstants.COMPLETE_DATE(), true);
-                        dialog.dismiss();
-                    } catch (NumberFormatException e) {
-                        ed_phone.setError(e.getMessage());
-                    }
-
-                }
-
-
+            } catch (NumberFormatException e) {
+                ed_phone.setError(e.getMessage());
             }
-        });
-        dialog.show();
+
+        }
+
     }
 
     // new tower -add
-    private void addTows(double lat, double lng, String locname, int phone, String uname, String datecreated, boolean verified) {
+    private void addTows(LatLng latLng, String locname, int phone, String uname, String datecreated, boolean verified) {
         String key = FirebaseDatabase.getInstance().getReference().child("tows").child(HomeActivity.Country).push().getKey();
         String photourl = String.valueOf(FirebaseAuth.getInstance().getCurrentUser().getPhotoUrl());
-        Towers towers = new Towers(uname, locname, phone, photourl, lat, lng, datecreated, true);
+        Towers towers = new Towers(uname, locname, phone, photourl, latLng.latitude, latLng.longitude, datecreated, true);
 
 
         Map<String, Object> childUpdates = new HashMap<>();
@@ -475,8 +485,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
 
                     Log.e(getClass().getName(), "Posting failed: ", databaseError.toException());
                 } else if (databaseError == null) {
-
-                    Toast.makeText(getContext(), "Successful Post", Toast.LENGTH_SHORT).show();
+                    customDialog.dismiss();
+                    Toast.makeText(getContext(), "Successfully Added", Toast.LENGTH_SHORT).show();
                 }
 
             }
@@ -484,50 +494,63 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
         });
     }
 
-    public ArrayList<Towers> getTows() {
-
-        newTowers = new ArrayList<>();
+    private void loadTows() {
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("tows").child(HomeActivity.Country);
         reference.addValueEventListener(new ValueEventListener() {
+            ArrayList<Towers> towers = new ArrayList<>();
 
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                ArrayList<Towers> newTowers1 = new ArrayList<>();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     // towers to model
                     Towers ts = snapshot.getValue(Towers.class);
-                    newTowers1.add(ts);
-                    Log.e(getClass().getName(), "GetTows ::" + ts.location);
 
+                    LatLng loc = new LatLng(ts.latitude, ts.longitude);
+                    if (loc != null) {
+                        if (ts.verified) {
+                            googleMap.addMarker(new MarkerOptions()
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_tow_marker))
+                                    .position(loc).title("L: " + ts.location + "," + "\n" + "N: " + ts.name)
+                                    .snippet("0" + ts.phone));
+                            CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(getActivity());
+                            googleMap.setInfoWindowAdapter(adapter);
+                        }
+
+                    }
+                    //TODO : add tows
                 }
-                newTowers = newTowers1;
-                Log.e(getClass().getName(), "GetTows Size Before ::" + newTowers.size());
+
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
             }
         });
-        Log.e(getClass().getName(), "GetTows Size ::" + newTowers.size());
-        return newTowers;
-        //add markers
     }
 
-    public ArrayList<Notes> getNotes() {
+    private void loadNotes() {
         final DatabaseReference noteReference = FirebaseDatabase.getInstance().getReference().child("notes").child(HomeActivity.Country);
-        final ArrayList<Notes> notesArrayList = new ArrayList<>();
         noteReference.addValueEventListener(new ValueEventListener() {
+            ArrayList<Notes> notes = new ArrayList<>();
 
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
-                    Notes values = snapshot.getValue(Notes.class);
+                    Notes notes = snapshot.getValue(Notes.class);
                     //populate list
-                    notesArrayList.add(values);
 
-                    Log.e(getClass().getName(), "NOTE:" + values.photourl);
+                    LatLng notLoc = new LatLng(notes.latitude, notes.longitude);
+
+                    if (notLoc != null) {
+                        googleMap.addMarker(new MarkerOptions()
+                                .position(notLoc).title(notes.location + " : " + notes.name)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_note_marker))
+                                .snippet(String.valueOf(notes.note))).showInfoWindow();
+                    }
+
                 }
+
 
             }
 
@@ -536,15 +559,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
 
             }
         });
-        return notesArrayList;
+
     }
 
-    private String getKnownLocation(double latitude, double longitude) throws IOException {
+    private String getKnownLocation(LatLng latLng) throws IOException {
         Geocoder geocoder;
         List<Address> addresses;
         geocoder = new Geocoder(getContext(), Locale.getDefault());
 
-        addresses = geocoder.getFromLocation(latitude, longitude, 1);
+        addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
         String city = addresses.get(0).getAddressLine(1);
         String state = addresses.get(0).getAdminArea();
         String sublocality = addresses.get(0).getSubLocality();
@@ -560,6 +583,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
         return lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
 
+
+    //add note
+
     public void rebootActivity() {
         Intent i = getContext().getPackageManager()
                 .getLaunchIntentForPackage(getContext().getPackageName());
@@ -567,44 +593,81 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Locati
         startActivity(i);
     }
 
-    private void loadMarkers() {
+    // show notes dialog
+    private void showNoteDialog() {
+        noteCustomDiag = new LovelyCustomDialog(getContext());
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.ly_notes_add, null);
+        noteCustomDiag
+                .setView(view)
+                .setTopColorRes(R.color.colorPrimary)
+                .setTitle("Add notes to your route");
 
 
-        Log.e(getClass().getName(), "Marker Tow Size:" + getTows().size());
-        Log.e(getClass().getName(), "Marker Note Size:" + getNotes().size());
+        final FusedLocationProviderClient locationClient = getFusedLocationProviderClient(context);
 
-        LatLng loc;
-        for (Towers ts : getTows()) {
-            loc = new LatLng(ts.latitude, ts.longitude);
-            if (loc != null) {
-                if (ts.verified) {
-                    googleMap.addMarker(new MarkerOptions()
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_tow_marker))
-                            .position(loc).title("L: " + ts.location + "," + "\n" + "N: " + ts.name)
-                            .snippet("0" + ts.phone));
-                    CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(getActivity());
-                    googleMap.setInfoWindowAdapter(adapter);
+
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        locationClient.getLastLocation().addOnSuccessListener(location -> {
+
+            if (location != null) {
+                try {
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    String city = getKnownLocation(latLng);
+
+                    noteCustomDiag.setMessage("Let others know what you encountered on " + "\n" + "[ " + city + " ]")
+                            .setListener(R.id.btnAddnote, v -> insertNotes(view, new LatLng(location.getLatitude(), location.getLongitude()), city))
+                            .setIcon(R.drawable.pin)
+                            .show();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
-            } //clean up
-
-            //custom markers
-
-
-            for (Notes notes : getNotes()) {
-                //location details
-
-                LatLng notLoc = new LatLng(notes.latitude, notes.longitude);
-                if (notLoc != null) {
-                    googleMap.addMarker(new MarkerOptions()
-                            .position(loc).title(notes.location + " : " + notes.name)
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_action_note_marker))
-                            .snippet(String.valueOf(notes.note))).showInfoWindow();
-                }
+            } else {
+                Toast.makeText(context, "Location is seems to be empty or off, please turn it on try again", Toast.LENGTH_SHORT).show();
             }
 
-        }
-
+        });
     }
+
+
+    //add notes
+    private void insertNotes(View view, LatLng latLng, String city) {
+        EditText editText = view.findViewById(R.id.ed_note);
+        if (editText.getText().length() > 3) {
+            String key = FirebaseDatabase.getInstance().getReference().child("tows").child(HomeActivity.Country).push().getKey();
+            Map<String, Object> values = new HashMap<>();
+            values.put("latitude", latLng.latitude);
+            values.put("longitude", latLng.longitude);
+            values.put("note", editText.getText().toString());
+            values.put("name", FirebaseAuth.getInstance().getCurrentUser().getDisplayName());
+            values.put("location", city);
+            values.put("timestamp", ServerValue.TIMESTAMP);
+            values.put("date_created", FConstants.COMPLETE_DATE());
+            values.put("post_id", key);
+            values.put("photourl", String.valueOf(FirebaseAuth.getInstance().getCurrentUser().getPhotoUrl()));
+
+            Map<String, Object> childUpdates = new HashMap<>();
+            childUpdates.put(key, values);
+            Log.e(getClass().getName(), childUpdates.toString());
+
+            FirebaseDatabase.getInstance().getReference().child("notes").child(HomeActivity.Country).updateChildren(childUpdates, (databaseError, databaseReference) -> {
+
+                if (databaseError != null) {
+                    Toast.makeText(getContext(), "Failed to add note", Toast.LENGTH_SHORT).show();
+                } else {
+
+                    Toast.makeText(getContext(), "Successfully added", Toast.LENGTH_SHORT).show();
+                    noteCustomDiag.dismiss();
+                }
+
+            });
+        } else
+            editText.setError("Enter a valid note ;-)");
+    }
+
 
 }

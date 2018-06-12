@@ -41,7 +41,6 @@ public class TowsFragment extends Fragment {
     private Context context;
 
     public TowsFragment() {
-       // getTows();
     }
 
     @Nullable
@@ -54,9 +53,11 @@ public class TowsFragment extends Fragment {
 
         towers = new ArrayList<>();
 
-        towsAdapter = new TowsAdapter(new MapsFragment().getTows());
+        towsAdapter = new TowsAdapter(towers);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, true));
         mRecyclerView.setAdapter(towsAdapter);
+
+        getTows();
 
         return view;
     }

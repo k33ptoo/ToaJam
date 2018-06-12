@@ -31,17 +31,14 @@ import butterknife.ButterKnife;
  */
 public class NotesFragment extends Fragment {
 
+    public ArrayList<Notes> notes;
     @BindView(R.id.notesRecyclerview)
     RecyclerView mRecyclerView;
-
-
-    NotesAdapter notesAdapter;
-    ArrayList<Notes> notes;
-
+    private NotesAdapter notesAdapter;
     private Context context;
 
     public NotesFragment() {
-        //getNotes();
+        getNotes();
     }
 
     @Nullable
@@ -54,7 +51,7 @@ public class NotesFragment extends Fragment {
 
         notes = new ArrayList<>();
 
-        notesAdapter = new NotesAdapter(new MapsFragment().getNotes());
+        notesAdapter = new NotesAdapter(notes);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, true));
         mRecyclerView.setAdapter(notesAdapter);
 

@@ -1,16 +1,17 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'io.fabric'
 android {
 
     flavorDimensions "default"
     signingConfigs {
-         config {
-             keyAlias 'keeptoo'
-             keyPassword 'k33pt00'
-             storeFile file('F:/Graphics/All/ToaJam/playkeystore.jks')
-             storePassword 'k33pt00'
-         }
+        config {
+            keyAlias 'keeptoo'
+            keyPassword 'k33pt00'
+            storeFile file('F:/Graphics/All/ToaJam/playkeystore.jks')
+            storePassword 'k33pt00'
+        }
 
     }
     compileSdkVersion 26
@@ -45,9 +46,13 @@ android {
             signingConfig signingConfigs.config
             targetSdkVersion 26
             testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
-            versionCode 10
-            versionName '1.1.5'
+            versionCode 14
+            versionName '1.1.8'
         }
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
     }
 }
 
@@ -65,6 +70,8 @@ dependencies {
     compile 'com.google.firebase:firebase-database:11.6.2'
     compile 'com.google.android.gms:play-services-ads:11.6.2'
     compile 'com.google.firebase:firebase-messaging:11.6.2'
+    //crash
+    implementation 'com.crashlytics.sdk.android:crashlytics:2.9.3'
     compile 'com.jakewharton:butterknife:8.8.1'
     compile 'com.google.firebase:firebase-core:11.6.2'
     compile 'com.firebaseui:firebase-ui-auth:3.1.0'

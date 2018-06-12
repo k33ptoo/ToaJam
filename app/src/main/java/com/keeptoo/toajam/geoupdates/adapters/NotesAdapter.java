@@ -55,7 +55,6 @@ public class NotesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     // total number of rows
     @Override
     public int getItemCount() {
-        Log.e(getClass().getName(), "NOTE::" + mNotes.size());
         return mNotes.size();
     }
 

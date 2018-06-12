@@ -79,21 +79,10 @@ public class UpdatesFragment extends Fragment {
         initViews();
         swipeLayout.setColorSchemeColors(
                 Color.RED, Color.GREEN, Color.BLUE, Color.CYAN);
-        swipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        initViews();
-                        swipeLayout.setRefreshing(false);
-                    }
-                }, 2000);
-
-            }
-        });
-
-
+        swipeLayout.setOnRefreshListener(() -> new Handler().postDelayed(() -> {
+            initViews();
+            swipeLayout.setRefreshing(false);
+        }, 2000));
 
 
         return view;
@@ -163,31 +152,25 @@ public class UpdatesFragment extends Fragment {
 
                     // ----------appeciation------------------
                     final ImageView iv_apps = recyclerView.findViewHolderForAdapterPosition(recyclerView.getChildAdapterPosition(v)).itemView.findViewById(R.id.iv_updates_appreciation);
-                    iv_apps.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
+                    iv_apps.setOnClickListener(view -> {
 
-                            DatabaseReference reference = FirebaseDatabase.getInstance().getReference("updates").child(HomeActivity.Country).child(updats.getPostId());
-                            new FireBaseUtilities().onAppClicked(reference);
+                        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("updates").child(HomeActivity.Country).child(updats.getPostId());
+                        new FireBaseUtilities().onAppClicked(reference);
 
 
-                        }
                     });
                     // ---------- end appeciation ----------------------
 
 
                     //load comments activity
                     final TextView tv_comments = recyclerView.findViewHolderForAdapterPosition(recyclerView.getChildAdapterPosition(v)).itemView.findViewById(R.id.txt_updates_date_coms);
-                    tv_comments.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
+                    tv_comments.setOnClickListener(view -> {
 
-                            Intent intent = new Intent(getActivity(), CommentActivity.class);
-                            intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
+                        Intent intent = new Intent(getActivity(), CommentActivity.class);
+                        intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
 
-                            startActivity(intent);
+                        startActivity(intent);
 
-                        }
                     });
 
 
@@ -236,6 +219,14 @@ public class UpdatesFragment extends Fragment {
 
             @Override
             public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+
+                final View child = rv.findChildViewUnder(e.getX(), e.getY());
+                if (child != null && gestureDetector.onTouchEvent(e)) {
+                    int position = rv.getChildAdapterPosition(child);
+                    String cont = ((TextView) rv.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.txt_update_desc)).getText().toString();
+                    String title = ((TextView) rv.findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.txt_updatename)).getText().toString();
+
+                }
                 return false;
             }
 
@@ -255,7 +246,6 @@ public class UpdatesFragment extends Fragment {
         });
 
     }
-
 
 
     //search through recyclerview

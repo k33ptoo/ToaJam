@@ -80,21 +80,19 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         Log.e(getClass().getName(), "Adding item at pos: " + position);
         final Updates updats = updates.get(position);
         final VHUpdates vu = (VHUpdates) holder;
-        String firsName = updats.getAuthor();
-        if (firsName.contains(" ")) {
-            firsName = firsName.substring(0, firsName.indexOf(" "));
-            vu.tv_tittle.setText(firsName);
+
+        if (updats.author != null) {
+
+            String[] firsName = updats.author.split(" ", 2);
+            vu.tv_tittle.setText(firsName[0]);
 
         }
+
+
         vu.tv_info.setText(updats.getBody());
-
-
         String textCom = updats.getDate() + " | " + 0 + " comments";
         vu.tv_date.setText(textCom);
-
-
         //get comment count
-
         DatabaseReference firebaseDatabase = FirebaseDatabase.getInstance().getReference("updates-comments").child(HomeActivity.Country);
 
         firebaseDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -121,9 +119,11 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             vu.tv_appreciations.setText(String.valueOf(updats.getNumAppr()));
             if (updats.allappCounts.containsKey(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
                 vu.iv_appreciations.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.liked));
-
-            } else
+                Log.e(getClass().getName(), "Liked");
+            } else {
                 vu.iv_appreciations.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.like));
+                Log.e(getClass().getName(), "Like");
+            }
 
         } else
             //zero appreciations of update
@@ -145,16 +145,13 @@ public class UpdatesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         }
 
-        vu.ly_clickzone.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    Intent intent = new Intent(context, CommentActivity.class);
-                    intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
-                    context.startActivity(intent);
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
+        vu.ly_clickzone.setOnClickListener(view -> {
+            try {
+                Intent intent = new Intent(context, CommentActivity.class);
+                intent.putExtra(CommentActivity.EXTRA_POST_KEY, updats.getPostId());
+                context.startActivity(intent);
+            } catch (Exception e1) {
+                e1.printStackTrace();
             }
         });
 

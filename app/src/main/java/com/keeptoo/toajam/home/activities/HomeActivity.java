@@ -12,8 +12,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
@@ -32,13 +30,11 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.airbnb.lottie.LottieAnimationView;
 import com.getkeepsafe.taptargetview.TapTarget;
@@ -67,6 +63,7 @@ import com.keeptoo.toajam.settings.SettingsActivity;
 import com.keeptoo.toajam.utils.FConstants;
 import com.keeptoo.toajam.utils.InteractionUtils;
 import com.squareup.picasso.Picasso;
+import com.yarolegovich.lovelydialog.LovelyCustomDialog;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -94,6 +91,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     Context context;
     private AdView mAdView;
     private Boolean exit = false;
+    private LovelyCustomDialog customDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,13 +105,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //showUpdateStatusDialog();
-                showBottomSheet();
-
-            }
+        fab.setOnClickListener(view -> {
+            showUpdateDialog();
+           // Crashlytics.getInstance().crash(); // Force a crash
         });
 
         sessionManager = new SessionManager(HomeActivity.this);
@@ -140,9 +134,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         ViewPager viewPager = findViewById(R.id.vp_home);
         HomeViewPagerAdapter viewPagerAdapter = new HomeViewPagerAdapter(this, getSupportFragmentManager());
         viewPager.setAdapter(viewPagerAdapter);
+        viewPager.setCurrentItem(1);
 
         TabLayout tabLayout2 = findViewById(R.id.tab_home);
         tabLayout2.setupWithViewPager(viewPager);
+
 
         //end of viewpager
 
@@ -153,8 +149,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 Toast.makeText(getApplicationContext(),
                         "Please check your connection", Toast.LENGTH_SHORT).show();
             } else {
-
+                viewPager.setCurrentItem(0);
                 loadUserInfo();
+
                 try {
                     loadAds();
                 } catch (Exception e) {
@@ -173,13 +170,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         //introduction
         boolean firstTimeRun = interactionUtils.getFirstTimeRun(this, "home_tap");
 
-        if (firstTimeRun == true) {
+        if (firstTimeRun) {
             showTapTargetSequence();
         }
 
 
     }
-
+//load custom advert
 
     private void loadAds() { //load ads
         final RelativeLayout layout_ad = findViewById(R.id.rel_adview);
@@ -225,7 +222,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         );
     }
-//load custom advert
 
     private void loadCustomAd(final ImageView view) {
 
@@ -240,7 +236,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
 
     }
-
 
     public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -272,18 +267,15 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.home, menu);
         MenuItem search = menu.findItem(R.id.search);
         SearchView searchView = (SearchView) MenuItemCompat.getActionView(search);
-       // updatesFragment.search(searchView);
+        // updatesFragment.search(searchView);
         return true;
     }
-
 
     private void showTapTarget(int view, String title, String content, Drawable icon) {
 
@@ -314,10 +306,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 });
     }
 
-
     private void showTapTargetSequence() {
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
         TapTargetSequence sequence = new TapTargetSequence(this);
         sequence.continueOnCancel(true);
 
@@ -343,7 +333,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                         .dimColor(R.color.colorPrimaryDark)
                         .outerCircleColor(R.color.colorAccent)
                         .targetCircleColor(R.color.colorWhite)
-                        .icon(ContextCompat.getDrawable(this,R.drawable.ic_action_plus))
+                        .icon(ContextCompat.getDrawable(this, R.drawable.ic_action_plus))
                         .cancelable(false)
                         .textColor(android.R.color.white))
 
@@ -458,7 +448,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-
     private void showCountryDialog() {
         MaterialDialog.Builder p = new MaterialDialog.Builder(HomeActivity.this);
         LayoutInflater inflater = this.getLayoutInflater();
@@ -468,22 +457,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         p.title("We would like to know your country");
         p.positiveText("OK");
         p.negativeText("Cancel");
-        p.onPositive(new MaterialDialog.SingleButtonCallback() {
-            @Override
-            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+        p.onPositive((dialog, which) -> {
 
-                sessionManager.setCountry(cpp.getSelectedCountryName());
-                rebootActivity();
+            sessionManager.setCountry(cpp.getSelectedCountryName());
+            rebootActivity();
 
-            }
         });
         p.cancelable(false);
-        p.onNegative(new MaterialDialog.SingleButtonCallback() {
-            @Override
-            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                rebootActivity();
-            }
-        });
+        p.onNegative((dialog, which) -> rebootActivity());
         p.show();
 
     }
@@ -496,66 +477,40 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
 
-    //use bottom sheet
-    private void showBottomSheet() {
-        final BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(HomeActivity.this);
-        final View sheetView = this.getLayoutInflater().inflate(R.layout.ly_alertbottomsheet, null);
-        bottomSheetDialog.setContentView(sheetView);
-        final FloatingActionButton fab_showsheet = sheetView.findViewById(R.id.fab_showbottomsheet);
-        ImageButton btn_share = sheetView.findViewById(R.id.button_post_update);
+    private void showUpdateDialog() {
+        customDialog = new LovelyCustomDialog(this);
+        View view = LayoutInflater.from(this).inflate(R.layout.ly_shareupdate, null);
+        customDialog
+                .setView(view)
+                .setTopColorRes(R.color.colorPrimary)
+                .setTitle("Share Update")
+                .setMessage("Share an update to guys - let them know what's up")
+                .setListener(R.id.button_post_update, v -> addUpdate(view))
+                .setIcon(R.drawable.ic_action_plus)
+                .show();
+
+    }
+
+    private void addUpdate(View view) {
+
+        final TextInputEditText editText = view.findViewById(R.id.field_update_text);
+
+        if (String.valueOf(editText.getText()).length() > 10) {
+            FireBaseUtilities f = new FireBaseUtilities();
 
 
-        TextView tv_user = sheetView.findViewById(R.id.txt_diagname);
-        TextView tv_loc = sheetView.findViewById(R.id.tv_currentroad);
-        CircleImageView imageView = sheetView.findViewById(R.id.iv_image);
-        tv_user.setText(user.getDisplayName().toString());
-        tv_loc.setText("How's traffic where you are?");
+            if (isNetworkAvailable()) {
+                f.writeNewPost(user.getUid(), user.getDisplayName(), FConstants.COMPLETE_DATE(), String.valueOf(editText.getText()), String.valueOf(user.getPhotoUrl()), getApplicationContext());
+                customDialog.dismiss();
+            } else {
+                Toast.makeText(getApplicationContext(), "Update not successful, Check your connection", Toast.LENGTH_SHORT).show();
+            }
 
-        if (user.getPhotoUrl() == null) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.ic_action_icon_placeholder_white));
 
         } else
-            Picasso.with(this).load(user.getPhotoUrl()).into(imageView);
-
-        final TextInputEditText editText = sheetView.findViewById(R.id.field_update_text);
-
-        btn_share.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //validate update info
-                if (String.valueOf(editText.getText()).length() > 10) {
-                    FireBaseUtilities f = new FireBaseUtilities();
-
-                    // calculate date
+            editText.setError("Please provide more update info..");
 
 
-                    // end date
-                    if (isNetworkAvailable()) {
-                        //sendPost(String.valueOf(editText.getText()), wholedate);
-                        f.writeNewPost(user.getUid(), user.getDisplayName(), FConstants.COMPLETE_DATE(), String.valueOf(editText.getText()), String.valueOf(user.getPhotoUrl()), getApplicationContext());
-                        bottomSheetDialog.dismiss();
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Update not successful, Check your connection", Toast.LENGTH_SHORT).show();
-                    }
-
-
-                } else
-                    editText.setError("Please provide more update info..");
-
-
-            }
-        });
-
-
-        fab_showsheet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-
-            }
-        });
-
-        bottomSheetDialog.show();
     }
 
     private void loadUserInfo() {

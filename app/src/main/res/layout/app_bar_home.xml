@@ -26,13 +26,13 @@
                 android:id="@+id/rel_adview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_marginTop="?android:attr/actionBarSize"
                 android:visibility="gone">
 
                 <com.google.android.gms.ads.AdView xmlns:ads="http://schemas.android.com/apk/res-auto"
                     android:id="@+id/adView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="top"
                     ads:adSize="SMART_BANNER"
                     ads:adUnitId="@string/banner_ad_unit_id_deploy"
                     app:layout_collapseMode="parallax"
@@ -69,8 +69,8 @@
                 android:id="@+id/tab_home"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/colorPrimary"
                 android:layout_gravity="bottom"
+                android:background="@color/colorPrimary"
                 android:elevation="0dp"
                 app:layout_scrollFlags="scroll|enterAlways"
                 app:tabIndicatorColor="@color/colorWhite" />

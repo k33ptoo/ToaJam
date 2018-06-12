@@ -110,13 +110,11 @@ public class CommentActivity extends AppCompatActivity implements View.OnClickLi
                 // Get Post object and use the values to update the UI
                 Updates post = dataSnapshot.getValue(Updates.class);
                 // [START_EXCLUDE]
-
-                String firsName = post.author;
-                if (firsName.contains(" ")) {
-                    firsName = firsName.substring(0, firsName.indexOf(" "));
-                    mAuthorView.setText(firsName);
-
+                if (post.author != null) {
+                    String[] firsName = post.author.split(" ", 2);
+                    mAuthorView.setText(firsName[0]);
                 }
+
                 mTitleView.setText(post.getDate());
                 mBodyView.setText(post.body);
 
@@ -337,11 +335,9 @@ public class CommentActivity extends AppCompatActivity implements View.OnClickLi
         @Override
         public void onBindViewHolder(CommentViewHolder holder, int position) {
             Comment comment = mComments.get(position);
-            String firsName = comment.author;
-            if (firsName.contains(" ")) {
-                firsName = firsName.substring(0, firsName.indexOf(" "));
-
-                holder.authorView.setText(firsName);
+            if (comment.author != null) {
+                String[] firsName = comment.author.split(" ", 2);
+                holder.authorView.setText(firsName[0]);
             }
             holder.bodyView.setText(comment.text);
             holder.dateView.setText(comment.date);

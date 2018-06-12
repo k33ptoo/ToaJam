@@ -29,6 +29,21 @@ public class Updates {
     public Map<String, Boolean> allappCounts = new HashMap<>();
 
 
+    public Updates(String uid, String author, String date, String body, String photourl, String postId) {
+        this.uid = uid;
+        this.author = author;
+        this.date = date;
+        this.body = body;
+        this.photourl = photourl;
+        this.postId = postId;
+
+
+    }
+
+    public Updates() {
+
+    }
+
     public Map<String, Boolean> getAllappCounts() {
         return allappCounts;
     }
@@ -89,30 +104,12 @@ public class Updates {
         this.date = title;
     }
 
-
     public String getBody() {
         return body;
     }
 
     public void setBody(String body) {
         this.body = body;
-    }
-
-
-
-    public Updates(String uid, String author, String date, String body, String photourl, String postId) {
-        this.uid = uid;
-        this.author = author;
-        this.date = date;
-        this.body = body;
-        this.photourl = photourl;
-        this.postId = postId;
-
-
-    }
-
-    public Updates() {
-
     }
 
     @Exclude
