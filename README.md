@@ -26,8 +26,6 @@ Download on playstore https://play.google.com/store/apps/details?id=com.keeptoo.
 
 ### Screenshots ###
 
-![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/1.png)
-
 ![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/2.png)
 
 ![alt text](https://bytebucket.org/keeptoo/toajam/raw/04fb5b57acd05b4cbc89ceb1152af58e294e1c4d/screenshots/3.png)
